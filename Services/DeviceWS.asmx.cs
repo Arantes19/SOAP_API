@@ -1,6 +1,7 @@
-﻿using System;
+﻿using DeviceService.Models;
+using System;
+using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
 using System.Data.SqlClient;
 using System.Web.Services;
 
@@ -16,10 +17,10 @@ namespace DeviceService.Services
         /// <summary>
         /// Retrieves all devices from the Devices table.
         /// </summary>
-        /// <returns>A DataSet containing all devices.</returns>
-        public DataSet GetAllDevices()
+        /// <returns>A List containing all devices.</returns>
+        public List<Device> GetAllDevices()
         {
-            DataSet ds = new DataSet();
+            List<Device> devices = new List<Device>();
 
             try
             {
@@ -34,9 +35,23 @@ namespace DeviceService.Services
 
                     SqlCommand cmd = new SqlCommand(q, con);
 
-                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
 
-                    da.Fill(ds, "Devices");
+                            devices.Add(new Device
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                // Check for DBNull before retrieving boolean value
+                                State = reader.IsDBNull(2) ? false : reader.GetBoolean(2),
+                                // Check for DBNull before retrieving double value
+                                Value = reader.IsDBNull(3) ? 0.0 : reader.GetDouble(3),
+                                HouseId = reader.GetInt32(4)
+                            });
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -45,18 +60,18 @@ namespace DeviceService.Services
                 throw ex;
             }
 
-            return ds;
+            return devices;
         }
 
-        [WebMethod(Description = "Retrieves a device from the Devices table based on its ID.")]
+        [WebMethod(Description = "Retrieves a device from the Devices table based on the ID of the User.")]
         /// <summary>
-        /// Retrieves a device from the Devices table based on its ID.
+        /// Retrieves a device from the Devices table based on the ID of the User.
         /// </summary>
-        /// <param name="deviceId">The ID of the device to retrieve.</param>
-        /// <returns>A DataSet containing the device information.</returns>
-        public DataSet GetDeviceById(int Id)
+        /// <param name="userId">The ID of the User to retrieve.</param>
+        /// <returns>A List containing the device information.</returns>
+        public List<Device> GetDeviceByUserId(int userId)
         {
-            DataSet ds = new DataSet();
+            List<Device> devices = new List<Device>();
 
             try
             {
@@ -67,14 +82,31 @@ namespace DeviceService.Services
                     con.Open();
 
                     // Use parameterized query to prevent SQL injection
-                    string q = "SELECT * FROM Devices WHERE Id = @Id";
+                    string q = "SELECT d.* " +
+                        "FROM Users u " +
+                        "JOIN Houses h ON u.Id = h.UserId " +
+                        "JOIN Devices d ON h.Id = d.HouseId " +
+                        "WHERE u.Id = @userId;";
 
                     SqlCommand cmd = new SqlCommand(q, con);
-                    cmd.Parameters.AddWithValue("@Id", Id);
+                    cmd.Parameters.AddWithValue("@userId", userId);
 
-                    SqlDataAdapter da = new SqlDataAdapter(cmd);
-
-                    da.Fill(ds, "Devices");
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            devices.Add(new Device
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                // Check for DBNull before retrieving boolean value
+                                State = reader.IsDBNull(2) ? false : reader.GetBoolean(2),
+                                // Check for DBNull before retrieving double value
+                                Value = reader.IsDBNull(3) ? 0.0 : reader.GetDouble(3),
+                                HouseId = reader.GetInt32(4)
+                            });
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -83,7 +115,7 @@ namespace DeviceService.Services
                 throw ex;
             }
 
-            return ds;
+            return devices;
         }
 
 
@@ -91,15 +123,17 @@ namespace DeviceService.Services
         /// <summary>
         /// Inserts a new device into the Devices table.
         /// </summary>
-        /// <param name="id">The ID of the device.</param>
         /// <param name="name">The name of the device.</param>
         /// <param name="state">The state of the device.</param>
         /// <param name="value">The value of the device.</param>
         /// <param name="houseId">The ID of the house to which the device belongs.</param>
         /// <returns>The number of rows affected by the insertion operation.</returns>
-        public int InsertDevice(int id, string name, bool state, double value, int houseId)
+        public int InsertDevice(string name, bool? state, double? value, int houseId)
         {
             int rowsAffected = 0;
+            state = state is null ? false : state;
+            value = value is null ? 0 : value;
+
             try
             {
                 using (SqlConnection con = new SqlConnection(ConfigurationManager.ConnectionStrings["DevicesConnectionString"].ConnectionString))
@@ -107,12 +141,11 @@ namespace DeviceService.Services
                     con.Open();
 
                     // parameterized queries for better security and to prevent SQL injection.
-                    string query = "INSERT INTO Devices(Id, Name, State, Value, HouseId) " +
-                                   "VALUES(@Id, @Name, @State, @Value, @HouseId)";
+                    string query = "INSERT INTO Devices(Name, State, Value, HouseId) " +
+                                   "VALUES(@Name, @State, @Value, @HouseId)";
 
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
-                        cmd.Parameters.AddWithValue("@Id", id);
                         cmd.Parameters.AddWithValue("@Name", name);
                         cmd.Parameters.AddWithValue("@State", state);
                         cmd.Parameters.AddWithValue("@Value", value);
@@ -123,9 +156,9 @@ namespace DeviceService.Services
                 }
                 return rowsAffected;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                return -1;
             }
         }
 
@@ -166,7 +199,7 @@ namespace DeviceService.Services
 
         [WebMethod(Description = "Deletes devices from the Devices table based on their state.")]
         /// <summary>
-        /// Deletes devices from the Devices table based on their state.
+        /// Deletes devices from the Devices table based on their Id.
         /// </summary>
         /// <param name="id">The id of the devices to delete.</param>
         /// <returns>The number of rows affected by the delete operation.</returns>

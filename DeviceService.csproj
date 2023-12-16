@@ -84,11 +84,6 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Devices.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Devices.xsd</DependentUpon>
-    </Compile>
     <Compile Include="Models\Device.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\DeviceWS.asmx.cs">
@@ -97,17 +92,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Devices.xsc">
-      <DependentUpon>Devices.xsd</DependentUpon>
-    </Content>
-    <None Include="Devices.xsd">
-      <SubType>Designer</SubType>
-      <Generator>MSDataSetGenerator</Generator>
-      <LastGenOutput>Devices.Designer.cs</LastGenOutput>
-    </None>
-    <Content Include="Devices.xss">
-      <DependentUpon>Devices.xsd</DependentUpon>
-    </Content>
     <None Include="packages.config" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>

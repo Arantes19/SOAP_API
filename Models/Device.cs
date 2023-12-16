@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-
-namespace DeviceService.Models
+﻿namespace DeviceService.Models
 {
     /// <summary>
     /// This class represents a Device
@@ -23,7 +18,7 @@ namespace DeviceService.Models
         /// <summary>
         /// Device's State
         /// </summary>
-        public bool State { get; set; }
+        public bool? State { get; set; } = false;
 
         /// <summary>
         /// Device's Value
