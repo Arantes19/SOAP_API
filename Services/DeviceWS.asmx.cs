@@ -21,18 +21,71 @@ namespace DeviceService.Services
         {
             DataSet ds = new DataSet();
 
-            string cs = ConfigurationManager.ConnectionStrings["DevicesConnectionString"].ConnectionString;
+            try
+            {
+                string cs = ConfigurationManager.ConnectionStrings["DevicesConnectionString"].ConnectionString;
 
-            SqlConnection con = new SqlConnection(cs);
+                using (SqlConnection con = new SqlConnection(cs))
+                {
+                    con.Open();
 
-            string q = "SELECT * FROM Devices";
+                    // Use parameterized query to prevent SQL injection
+                    string q = "SELECT * FROM Devices";
 
-            SqlDataAdapter da = new SqlDataAdapter(q, con);
+                    SqlCommand cmd = new SqlCommand(q, con);
 
-            da.Fill(ds, "Devices");
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+
+                    da.Fill(ds, "Devices");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions appropriately (e.g., log or throw)
+                throw ex;
+            }
 
             return ds;
         }
+
+        [WebMethod(Description = "Retrieves a device from the Devices table based on its ID.")]
+        /// <summary>
+        /// Retrieves a device from the Devices table based on its ID.
+        /// </summary>
+        /// <param name="deviceId">The ID of the device to retrieve.</param>
+        /// <returns>A DataSet containing the device information.</returns>
+        public DataSet GetDeviceById(int Id)
+        {
+            DataSet ds = new DataSet();
+
+            try
+            {
+                string cs = ConfigurationManager.ConnectionStrings["DevicesConnectionString"].ConnectionString;
+
+                using (SqlConnection con = new SqlConnection(cs))
+                {
+                    con.Open();
+
+                    // Use parameterized query to prevent SQL injection
+                    string q = "SELECT * FROM Devices WHERE Id = @Id";
+
+                    SqlCommand cmd = new SqlCommand(q, con);
+                    cmd.Parameters.AddWithValue("@Id", Id);
+
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+
+                    da.Fill(ds, "Devices");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions appropriately (e.g., log or throw)
+                throw ex;
+            }
+
+            return ds;
+        }
+
 
         [WebMethod(Description = "Inserts a new device into the Devices table.")]
         /// <summary>
