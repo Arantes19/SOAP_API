@@ -1,61 +1,49 @@
-﻿using DeviceService.Models;
-using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using System.Configuration;
 using System.Data;
-using System.Data.OleDb;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Web;
 using System.Web.Services;
 
 namespace DeviceService.Services
 {
     /// <summary>
-    /// Summary description for DeviceWS
+    /// Web service for CRUD operations on the Devices database table.
     /// </summary>
-    [WebService(Namespace = "http://homeautomation.org/", Description = "CRUD of Devices Database table")]
+    [WebService(Namespace = "http://homeautomation.org/", Description = "CRUD of Devices database table")]
     public class DeviceWS : WebService
     {
-        [WebMethod(Description = "")]
+        [WebMethod(Description = "Retrieves all devices from the Devices table.")]
         /// <summary>
-        /// 
+        /// Retrieves all devices from the Devices table.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A DataSet containing all devices.</returns>
         public DataSet GetAllDevices()
         {
             DataSet ds = new DataSet();
 
-            //1º ConnectionString no WebConfig
             string cs = ConfigurationManager.ConnectionStrings["DevicesConnectionString"].ConnectionString;
 
-            //2º OpenConnection
             SqlConnection con = new SqlConnection(cs);
 
-            //3º Query
             string q = "SELECT * FROM Devices";
 
-            //4º Execute
             SqlDataAdapter da = new SqlDataAdapter(q, con);
 
             da.Fill(ds, "Devices");
 
-            //5º Result
             return ds;
         }
 
-        [WebMethod(Description = "")]
+        [WebMethod(Description = "Inserts a new device into the Devices table.")]
         /// <summary>
-        /// 
+        /// Inserts a new device into the Devices table.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="name"></param>
-        /// <param name="state"></param>
-        /// <param name="value"></param>
-        /// <param name="houseId"></param>
-        /// <returns></returns>
+        /// <param name="id">The ID of the device.</param>
+        /// <param name="name">The name of the device.</param>
+        /// <param name="state">The state of the device.</param>
+        /// <param name="value">The value of the device.</param>
+        /// <param name="houseId">The ID of the house to which the device belongs.</param>
+        /// <returns>The number of rows affected by the insertion operation.</returns>
         public int InsertDevice(int id, string name, bool state, double value, int houseId)
         {
             int rowsAffected = 0;
@@ -88,14 +76,14 @@ namespace DeviceService.Services
             }
         }
 
-        [WebMethod(Description = "")]
+        [WebMethod(Description = "Updates the value of a device in the Devices table.")]
         /// <summary>
-        /// 
+        /// Updates the value of a device in the Devices table.
         /// </summary>
-        /// <param name="name"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        public int UpdateDevice(string name, bool state)
+        /// <param name="id">The id of the device to update.</param>
+        /// <param name="value">The new value of the device.</param>
+        /// <returns>The number of rows affected by the update operation.</returns>
+        public int UpdateDevice(int id, double value)
         {
             int rowsAffected = 0;
             try
@@ -105,11 +93,11 @@ namespace DeviceService.Services
                     con.Open();
 
                     //parameterized queries for better security and to prevent SQL injection.
-                    string cs = "UPDATE Devices SET State=@State WHERE Name=@Name";
+                    string cs = "UPDATE Devices SET Value=@Value WHERE Id=@Id";
 
                     SqlCommand cmd = new SqlCommand(cs, con);
-                    cmd.Parameters.AddWithValue("@State", state);
-                    cmd.Parameters.AddWithValue("@Name", name);
+                    cmd.Parameters.AddWithValue("@Value", value);
+                    cmd.Parameters.AddWithValue("@Id", id);
 
                     rowsAffected = cmd.ExecuteNonQuery();
 
@@ -123,13 +111,13 @@ namespace DeviceService.Services
             }
         }
 
-        [WebMethod(Description = "")]
+        [WebMethod(Description = "Deletes devices from the Devices table based on their state.")]
         /// <summary>
-        /// 
+        /// Deletes devices from the Devices table based on their state.
         /// </summary>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        public int DeleteDevice(bool state)
+        /// <param name="id">The id of the devices to delete.</param>
+        /// <returns>The number of rows affected by the delete operation.</returns>
+        public int DeleteDevice(int id)
         {
             try
             {
@@ -138,11 +126,11 @@ namespace DeviceService.Services
                     con.Open();
 
                     // Use parameterized query to prevent SQL injection
-                    string commandString = "DELETE FROM Devices WHERE State = @State";
+                    string commandString = "DELETE FROM Devices WHERE Id = @Id";
 
                     using (SqlCommand command = new SqlCommand(commandString, con))
                     {
-                        command.Parameters.AddWithValue("@State", state);
+                        command.Parameters.AddWithValue("@Id", id);
 
                         int rowsAffected = command.ExecuteNonQuery();
 
@@ -155,6 +143,5 @@ namespace DeviceService.Services
                 throw e;
             }
         }
-
     }
 }
